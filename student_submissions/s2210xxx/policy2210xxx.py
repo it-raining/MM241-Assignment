@@ -15,6 +15,16 @@ class Policy2210xxx(Policy):
             self.policy = 1
         elif policy_id == 2:
             self.policy = 2
+    def _can_place_(self, stock, position, prod_size):
+        stock_w, stock_h = self._get_stock_size_(stock)
+        if prod_size[0] + position[0] > stock_w:
+            return 0
+        if prod_size[1] + position[1] > stock_h:
+            return 0
+        pos_x, pos_y = position
+        prod_w, prod_h = prod_size
+
+        return np.all(stock[pos_x : pos_x + prod_w, pos_y : pos_y + prod_h] == -1)
     def _sort_stocks(self, stocks):
         stock_info = []
         for idx, stock in enumerate(stocks):
@@ -29,6 +39,8 @@ class Policy2210xxx(Policy):
     def _sort_item1(self, items):
         stock_info = []
         for item in (items):
+            if item["quantity"] <= 0:
+                continue
             stock_w, stock_h = item["size"]
             area = stock_w * stock_h
             perimeter = 2 * (stock_w + stock_h)
@@ -40,13 +52,15 @@ class Policy2210xxx(Policy):
     def _sort_item2(self, items):
         stock_info = []
         for item in (items):
+            if item["quantity"] <= 0:
+                continue
             stock_w, stock_h = item["size"]
             if stock_w < stock_h:
-                item["size"] = stock_h, stock_w
+                item["size"] = item["size"][::-1]
             stock_w, stock_h = item["size"]
             area = stock_w * stock_h
             perimeter = 2 * (stock_w + stock_h)
-            stock_info.append((item, area, stock_w))
+            stock_info.append((item, stock_w, area))
 
         # Sort by decreasing area and increasing perimeter
         sorted_stock_info = sorted(stock_info, key=lambda x: (-x[1], -x[2]))
@@ -58,7 +72,7 @@ class Policy2210xxx(Policy):
             case 1:
                 if self.observation_old != observation:
                     self.stock_sort = self._sort_stocks(observation["stocks"])
-                    self.item_sort = self._sort_item1(observation["products"])
+                    self.item_sort = self._sort_item2(observation["products"])
                     # self.observation_old = observation
                 # list_prods = observation["products"]
                 list_prods = self.item_sort
@@ -79,25 +93,19 @@ class Policy2210xxx(Policy):
                             prod_w, prod_h = prod_size
 
                             # Try placing the product in the bottom-left-most position
-                            if stock_w >= prod_w and stock_h >= prod_h:
-                                for y in range(stock_h - prod_h + 1):
-                                    for x in range(stock_w - prod_w + 1):
-                                        if self._can_place_(stock, (x, y), prod_size):
-                                            best_pos = (x, y)
-                                            break
-                                    if best_pos is not None:
+                            for y in range(stock_h - prod_h + 1):
+                                for x in range(stock_w - prod_w + 1):
+                                    if self._can_place_(stock, (x, y), prod_size):
+                                        best_pos = (x, y)
                                         break
+                                    if self._can_place_(stock, (x, y), prod_size[::-1]):
+                                        best_pos = (x, y)
+                                        prod_size = prod_size[::-1]
+                                        prod_w, prod_h = prod_size
+                                        break
+                                if best_pos is not None:
+                                    break
                             # Check rotated orientation
-                            if stock_w >= prod_h and stock_h >= prod_w:
-                                for y in range(stock_h - prod_w + 1):
-                                    for x in range(stock_w - prod_h + 1):
-                                        if self._can_place_(stock, (x, y), prod_size[::-1]):
-                                            if best_pos is None or y < best_pos[1] or ( y == best_pos[1] and x < best_pos[0]):
-                                                best_pos = (x, y)
-                                                prod_size = prod_size[::-1]
-                                                break
-                                    if best_pos is not None:
-                                        break
                             if best_pos is not None:
                                 pos_x, pos_y = best_pos
                                 stock_idx = i
@@ -105,6 +113,7 @@ class Policy2210xxx(Policy):
 
                     if pos_x is not None and pos_y is not None:
                         break
+                print("stock_idx",stock_idx, "stck size", stock_w, stock_h, "prod size", prod_w, prod_h, "position", (pos_x, pos_y))
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
 
             case 2:
@@ -138,19 +147,17 @@ class Policy2210xxx(Policy):
                                     continue
                                 x = x + 1
                                 if x > stock_w - prod_w: break
-                                if not self._can_place_(stock, (x, y), prod_size):
-                                    break
-                                best_pos = (x, y)
-                                y = y - 1
-                            # if self._can_place_(stock, (x, y), prod_size):
-                            #     best_pos = (x, y)
-                            #     break
+                                if self._can_place_(stock, (x, y), prod_size):
+                                    best_pos = (x, y)
+                                else: break
+                                
                             if best_pos is not None:
                                 break
                     if best_pos is not None:
                         pos_x, pos_y = best_pos
                         stock_idx = i
                         break
+                # print("stock_idx",stock_idx, "stck size", stock_w, stock_h, "prod size", prod_w, prod_h, "position", (pos_x, pos_y))
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
     # Student code here
     # You can add more functions if needed
