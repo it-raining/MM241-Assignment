@@ -92,7 +92,7 @@ class Policy2210xxx(Policy):
                                 for y in range(stock_h - prod_w + 1):
                                     for x in range(stock_w - prod_h + 1):
                                         if self._can_place_(stock, (x, y), prod_size[::-1]):
-                                            if best_pos is None or y < best_pos[1] or x < best_pos[0]:
+                                            if best_pos is None or y < best_pos[1] or ( y == best_pos[1] and x < best_pos[0]):
                                                 best_pos = (x, y)
                                                 prod_size = prod_size[::-1]
                                                 break
