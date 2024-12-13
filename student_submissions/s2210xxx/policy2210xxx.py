@@ -65,6 +65,8 @@ class Policy2210xxx(Policy):
         # Sort by decreasing area and increasing perimeter
         sorted_stock_info = sorted(stock_info, key=lambda x: (-x[1], -x[2]))
         return [(info[0]) for info in sorted_stock_info]
+    def _is_better_position(self, stock, old_pos, new_pos, prod_size):
+        return new_pos < old_pos
     def get_action(self, observation, info):
         
         # Student code here
@@ -73,47 +75,46 @@ class Policy2210xxx(Policy):
                 if self.observation_old != observation:
                     self.stock_sort = self._sort_stocks(observation["stocks"])
                     self.item_sort = self._sort_item2(observation["products"])
-                    # self.observation_old = observation
-                # list_prods = observation["products"]
+                # self.observation_old = observation
+
                 list_prods = self.item_sort
                 prod_size = [0, 0]
                 stock_idx = -1
                 pos_x, pos_y = None, None
                 best_pos = None
-                # Pick a product that has quality > 0
-                
 
-                        # Loop through all stocks
+                # Loop through all stocks
                 for i, stock in self.stock_sort:
-                    
+                    # print(f"Checking stock {i}")  # Debug
+                    stock_w, stock_h = self._get_stock_size_(stock)
                     for prod in list_prods:
-                        if prod["quantity"] > 0:
-                            prod_size = prod["size"]
-                            stock_w, stock_h = self._get_stock_size_(stock)
-                            prod_w, prod_h = prod_size
+                        if prod["quantity"] <= 0:
+                            continue
+                        prod_size = prod["size"]
+                        prod_w, prod_h = prod_size
+                        # print(f"Trying to place product {prod_size}")  # Debug
 
-                            # Try placing the product in the bottom-left-most position
-                            for y in range(stock_h - prod_h + 1):
-                                for x in range(stock_w - prod_w + 1):
-                                    if self._can_place_(stock, (x, y), prod_size):
+                        for y in range(stock_h - prod_h + 1):
+                            for x in range(stock_w - prod_w + 1):
+                                if self._can_place_(stock, (x, y), prod_size):
+                                    # Update the best position
+                                    if best_pos is None or self._is_better_position(stock, best_pos, (x, y), prod_size):
                                         best_pos = (x, y)
-                                        break
-                                    if self._can_place_(stock, (x, y), prod_size[::-1]):
-                                        best_pos = (x, y)
-                                        prod_size = prod_size[::-1]
-                                        prod_w, prod_h = prod_size
-                                        break
-                                if best_pos is not None:
-                                    break
-                            # Check rotated orientation
-                            if best_pos is not None:
-                                pos_x, pos_y = best_pos
-                                stock_idx = i
-                                break
+                                        # print(f"Found new best position at {best_pos}")  # Debug
 
-                    if pos_x is not None and pos_y is not None:
+                        # If we found a valid position, break
+                        if best_pos:
+                            break
+
+                    # Stop looking at other stocks if we placed the product
+                    if best_pos:
+                        pos_x, pos_y = best_pos
+                        stock_idx = i
+                        # print(f"Placed product in stock {i} at {best_pos}")  # Debug
                         break
-                print("stock_idx",stock_idx, "stck size", stock_w, stock_h, "prod size", prod_w, prod_h, "position", (pos_x, pos_y))
+
+                # Log final placement details
+                print(f"Final Placement: Stock {stock_idx}, Product Size {prod_size}, Position ({pos_x}, {pos_y})")
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
 
             case 2:
@@ -157,7 +158,7 @@ class Policy2210xxx(Policy):
                         pos_x, pos_y = best_pos
                         stock_idx = i
                         break
-                # print("stock_idx",stock_idx, "stck size", stock_w, stock_h, "prod size", prod_w, prod_h, "position", (pos_x, pos_y))
+                print(f"Final Placement: Stock {stock_idx}, Product Size {prod_size}, Position ({pos_x}, {pos_y})")
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
     # Student code here
     # You can add more functions if needed
