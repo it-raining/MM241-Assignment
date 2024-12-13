@@ -75,46 +75,47 @@ class Policy2210xxx(Policy):
                 if self.observation_old != observation:
                     self.stock_sort = self._sort_stocks(observation["stocks"])
                     self.item_sort = self._sort_item2(observation["products"])
-                # self.observation_old = observation
 
                 list_prods = self.item_sort
-                prod_size = [0, 0]
-                stock_idx = -1
                 pos_x, pos_y = None, None
+                stock_idx = -1
                 best_pos = None
 
                 # Loop through all stocks
                 for i, stock in self.stock_sort:
-                    # print(f"Checking stock {i}")  # Debug
-                    stock_w, stock_h = self._get_stock_size_(stock)
                     for prod in list_prods:
-                        if prod["quantity"] <= 0:
-                            continue
-                        prod_size = prod["size"]
-                        prod_w, prod_h = prod_size
-                        # print(f"Trying to place product {prod_size}")  # Debug
+                        original_size = prod["size"]
+                        rotated_size = [original_size[1], original_size[0]]
 
-                        for y in range(stock_h - prod_h + 1):
-                            for x in range(stock_w - prod_w + 1):
+                        for prod_size in [original_size, rotated_size]:
+                            stock_w, stock_h = self._get_stock_size_(stock)
+                            prod_w, prod_h = prod_size
+
+                            if prod_w > stock_w or prod_h > stock_h:
+                                continue
+
+                            x, y = 0, 0
+                            while y < stock_h - prod_h + 1:
                                 if self._can_place_(stock, (x, y), prod_size):
-                                    # Update the best position
-                                    if best_pos is None or self._is_better_position(stock, best_pos, (x, y), prod_size):
+                                    best_pos = (x, y)
+                                    while y < stock_h - prod_h and self._can_place_(stock, (x, y + 1), prod_size):
+                                        y += 1
                                         best_pos = (x, y)
-                                        # print(f"Found new best position at {best_pos}")  # Debug
+                                    break
 
-                        # If we found a valid position, break
-                        if best_pos:
+                                x += 1
+                                if x > stock_w - prod_w:
+                                    break
+                            if best_pos is not None:
+                                break
+                        if best_pos is not None:
+                            pos_x, pos_y = best_pos
+                            stock_idx = i
                             break
-
-                    # Stop looking at other stocks if we placed the product
-                    if best_pos:
-                        pos_x, pos_y = best_pos
-                        stock_idx = i
-                        # print(f"Placed product in stock {i} at {best_pos}")  # Debug
+                    if best_pos is not None:
                         break
 
-                # Log final placement details
-                print(f"Final Placement: Stock {stock_idx}, Product Size {prod_size}, Position ({pos_x}, {pos_y})")
+                # print(stock_idx, ", ", prod_size, ", ", pos_x, ": ", pos_y)
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
 
             case 2:
