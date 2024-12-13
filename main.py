@@ -16,9 +16,8 @@ NUM_EPISODES = 100
 if __name__ == "__main__":
     # Reset the environment
     # observation, info = env.reset(seed=42)
-    # pygame.display.set_mode((1000, 1000))
 
-    # # # Test GreedyPolicy
+    # # # # Test GreedyPolicy
     # gd_policy = GreedyPolicy()
     # ep = 0
     # while ep < NUM_EPISODES:
@@ -49,10 +48,9 @@ if __name__ == "__main__":
     # Uncomment the following code to test your policy
     # Reset the environment
     observation, info = env.reset(seed=42)
-    # pygame.display.set_mode((800, 600))
-    # print(info)
+    print(info)
 
-    policy2210xxx = Policy2210xxx(policy_id=2)
+    policy2210xxx = Policy2210xxx(policy_id=1)
     for _ in range(200):
         action = policy2210xxx.get_action(observation, info)
         observation, reward, terminated, truncated, info = env.step(action)
@@ -63,6 +61,6 @@ if __name__ == "__main__":
             observation, info = env.reset()
         
         pygame.display.update()
-    # observation, info = env.reset(seed=42)
-    # print(info)
+    observation, info = env.reset(seed=42)
+    print(info)
 env.close()

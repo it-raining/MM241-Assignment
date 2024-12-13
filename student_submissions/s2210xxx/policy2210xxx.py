@@ -26,7 +26,7 @@ class Policy2210xxx(Policy):
         # Sort by decreasing area and increasing perimeter
         sorted_stock_info = sorted(stock_info, key=lambda x: (-x[2], x[3]))
         return [(info[0], info[1]) for info in sorted_stock_info]
-    def _sort_item(self, items):
+    def _sort_item1(self, items):
         stock_info = []
         for item in (items):
             stock_w, stock_h = item["size"]
@@ -37,13 +37,29 @@ class Policy2210xxx(Policy):
         # Sort by decreasing area and increasing perimeter
         sorted_stock_info = sorted(stock_info, key=lambda x: (-x[1], x[2]))
         return [(info[0]) for info in sorted_stock_info]
+    def _sort_item2(self, items):
+        stock_info = []
+        for item in (items):
+            stock_w, stock_h = item["size"]
+            if stock_w < stock_h:
+                item["size"] = stock_h, stock_w
+            stock_w, stock_h = item["size"]
+            area = stock_w * stock_h
+            perimeter = 2 * (stock_w + stock_h)
+            stock_info.append((item, area, stock_w))
+
+        # Sort by decreasing area and increasing perimeter
+        sorted_stock_info = sorted(stock_info, key=lambda x: (-x[1], -x[2]))
+        return [(info[0]) for info in sorted_stock_info]
     def get_action(self, observation, info):
-        if self.observation_old != observation:
-            self.stock_sort = self._sort_stocks(observation["stocks"])
-            self.item_sort = self._sort_item(observation["products"])
+        
         # Student code here
         match self.policy:
             case 1:
+                if self.observation_old != observation:
+                    self.stock_sort = self._sort_stocks(observation["stocks"])
+                    self.item_sort = self._sort_item1(observation["products"])
+                    # self.observation_old = observation
                 # list_prods = observation["products"]
                 list_prods = self.item_sort
                 prod_size = [0, 0]
@@ -67,9 +83,8 @@ class Policy2210xxx(Policy):
                                 for y in range(stock_h - prod_h + 1):
                                     for x in range(stock_w - prod_w + 1):
                                         if self._can_place_(stock, (x, y), prod_size):
-                                            if best_pos is None:
-                                                best_pos = (x, y)
-                                                break
+                                            best_pos = (x, y)
+                                            break
                                     if best_pos is not None:
                                         break
                             # Check rotated orientation
@@ -90,10 +105,13 @@ class Policy2210xxx(Policy):
 
                     if pos_x is not None and pos_y is not None:
                         break
-                print(stock_idx)
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
 
             case 2:
+                if self.observation_old != observation:
+                    self.stock_sort = self._sort_stocks(observation["stocks"])
+                    self.item_sort = self._sort_item2(observation["products"])
+                    # self.observation_old = observation
                 # list_prods = observation["products"]
                 list_prods = self.item_sort
                 prod_size = [0, 0]
@@ -105,21 +123,25 @@ class Policy2210xxx(Policy):
 
                         # Loop through all stocks
                 for i, stock in self.stock_sort:
-                    
                     for prod in list_prods:
                         if prod["quantity"] > 0:
                             prod_size = prod["size"]
                             stock_w, stock_h = self._get_stock_size_(stock)
                             prod_w, prod_h = prod_size
-                            for y in range(stock_h - prod_h + 1):
-                                if self._can_place_(stock, (x, y), prod_size):
-                                    best_pos = (x, y)
+                            if not self._can_place_(stock, (x, y), prod_size):
+                                continue
+                            best_pos = (x, y)
+                            while y < stock_h - prod_h + 1:
+                                if self._can_place_(stock, (x, y + 1), prod_size):
+                                    best_pos = (x, y + 1)
+                                    y = y + 1
                                     continue
-                                if not self._can_place_(stock, (x + 1, y - 1), prod_size):
-                                    break
-                                y = y - 2
                                 x = x + 1
-                                if x >= stock_w - prod_w: break
+                                if x > stock_w - prod_w: break
+                                if not self._can_place_(stock, (x, y), prod_size):
+                                    break
+                                best_pos = (x, y)
+                                y = y - 1
                             # if self._can_place_(stock, (x, y), prod_size):
                             #     best_pos = (x, y)
                             #     break
