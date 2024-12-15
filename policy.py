@@ -121,4 +121,5 @@ class GreedyPolicy(Policy):
 
                 if pos_x is not None and pos_y is not None:
                     break
+                
         return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
