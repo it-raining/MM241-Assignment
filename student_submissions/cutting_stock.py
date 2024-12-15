@@ -135,9 +135,9 @@ class CuttingStockEnv(gym.Env):
 
         # Hardcoded products
         self._products = [
-            {"size": np.array([20, 10]), "quantity": 100},
-            {"size": np.array([25, 25]), "quantity": 30},
-            {"size": np.array([10, 60]), "quantity": 20},
+            {"size": np.array([20, 10]), "quantity": 1},
+            {"size": np.array([25, 25]), "quantity": 3},
+            {"size": np.array([10, 60]), "quantity": 2},
             {"size": np.array([70, 70]), "quantity": 2},
         ]
         self._products = tuple(self._products)
@@ -300,5 +300,12 @@ class CuttingStockEnv(gym.Env):
 
     def close(self):
         if self.window is not None:
+            running = True
+            while running:
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT or (event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE):
+                        running = False
+                        break
             pygame.display.quit()
             pygame.font.quit()
+

@@ -30,9 +30,6 @@ if __name__ == "__main__":
 
         if terminated or truncated:
             print(info)
-            observation, info = env.reset()
-        
-        pygame.display.update()
-    observation, info = env.reset(seed=42)
-    print(info)
+            break;
+            # observation, info = env.reset()
 env.close()
