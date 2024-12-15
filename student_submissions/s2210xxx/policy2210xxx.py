@@ -33,7 +33,6 @@ class Policy2210xxx(Policy):
             perimeter = 2 * (stock_w + stock_h)
             stock_info.append((idx, stock, area, perimeter))
 
-        # Sort by decreasing area and increasing perimeter
         sorted_stock_info = sorted(stock_info, key=lambda x: (-x[2], x[3]))
         return [(info[0], info[1]) for info in sorted_stock_info]
     def _sort_item1(self, items):
@@ -46,7 +45,6 @@ class Policy2210xxx(Policy):
             perimeter = 2 * (stock_w + stock_h)
             stock_info.append((item, area, perimeter))
 
-        # Sort by decreasing area and increasing perimeter
         sorted_stock_info = sorted(stock_info, key=lambda x: (-x[1], x[2]))
         return [(info[0]) for info in sorted_stock_info]
     def _sort_item2(self, items):
@@ -65,23 +63,21 @@ class Policy2210xxx(Policy):
         # Sort by decreasing area and increasing perimeter
         sorted_stock_info = sorted(stock_info, key=lambda x: (-x[1], -x[2]))
         return [(info[0]) for info in sorted_stock_info]
-    def _is_better_position(self, stock, old_pos, new_pos, prod_size):
-        return new_pos < old_pos
     def get_action(self, observation, info):
         
         # Student code here
         match self.policy:
             case 1:
-                if self.observation_old != observation:
+                if not np.array_equal(self.observation_old, observation):
                     self.stock_sort = self._sort_stocks(observation["stocks"])
-                    self.item_sort = self._sort_item2(observation["products"])
+                    self.item_sort = self._sort_item1(observation["products"])
+                    # self.observation_old = observation
 
                 list_prods = self.item_sort
                 pos_x, pos_y = None, None
                 stock_idx = -1
                 best_pos = None
 
-                # Loop through all stocks
                 for i, stock in self.stock_sort:
                     for prod in list_prods:
                         original_size = prod["size"]
@@ -115,7 +111,7 @@ class Policy2210xxx(Policy):
                     if best_pos is not None:
                         break
 
-                # print(stock_idx, ", ", prod_size, ", ", pos_x, ": ", pos_y)
+                print(f"Final Placement: Stock {stock_idx}, Product Size {prod_size}, Position ({pos_x}, {pos_y})")
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
 
             case 2:
@@ -123,16 +119,12 @@ class Policy2210xxx(Policy):
                     self.stock_sort = self._sort_stocks(observation["stocks"])
                     self.item_sort = self._sort_item2(observation["products"])
                     # self.observation_old = observation
-                # list_prods = observation["products"]
                 list_prods = self.item_sort
                 prod_size = [0, 0]
                 stock_idx = -1
                 pos_x, pos_y = None, None
                 best_pos = None
-                # Pick a product that has quality > 0
                 x, y = 0, 0
-
-                        # Loop through all stocks
                 for i, stock in self.stock_sort:
                     for prod in list_prods:
                         if prod["quantity"] > 0:
