@@ -2,7 +2,7 @@ import numpy as np
 from policy import Policy
 
 
-class Policy2210xxx(Policy):
+class Policy2212429_2211588_2212937_2212466(Policy):
     policy = 0
     stock_sort = None
     observation_old = None
