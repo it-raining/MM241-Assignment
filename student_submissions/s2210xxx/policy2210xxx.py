@@ -115,7 +115,7 @@ class Policy2210xxx(Policy):
                     if best_pos is not None:
                         break
 
-                # print(stock_idx, ", ", prod_size, ", ", pos_x, ": ", pos_y)
+                print(f"Final Placement: Stock {stock_idx}, Product Size {prod_size}, Position ({pos_x}, {pos_y})")
                 return {"stock_idx": stock_idx, "size": prod_size, "position": (pos_x, pos_y)}
 
             case 2:
